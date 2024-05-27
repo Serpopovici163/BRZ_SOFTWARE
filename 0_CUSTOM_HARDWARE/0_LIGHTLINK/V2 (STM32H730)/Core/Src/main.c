@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "neopixel.h"
 
 /* USER CODE END Includes */
 
@@ -31,6 +32,46 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+//turn signals
+#define TURN_SIGNAL_TIME_STEP 400
+#define TURN_SIGNAL_DEBOUNCE 100
+#define MIN_TURN_SIGNAL_FLASH 3
+
+// brake lights
+#define BRAKE_FLASH_MINIMUM_LENGTH 1500
+#define BRAKE_FLASH_TIME_STEP 100
+
+//light cycle general
+#define LIGHT_CYCLE_TIME_STEP 100
+
+//CAN
+#define CANBUS_TIMEOUT 3000 //board shuts down after 3 seconds
+
+//light pinouts
+//DRL
+#define R_HL_DRL M8_TRIG_Pin
+#define R_HL_DRL_Port M8_TRIG_GPIO_Port
+#define L_HL_DRL M9_TRIG_Pin
+#define L_HL_DRL_Port M9_TRIG_GPIO_Port
+
+//INDICATORS
+#define L_HL_IND M7_TRIG_Pin
+#define L_HL_IND_Port M7_TRIG_GPIO_Port
+#define R_HL_IND M6_TRIG_Pin
+#define R_HL_IND_Port M6_TRIG_GPIO_Port
+#define L_BL_IND M4_TRIG_Pin
+#define L_BL_IND_Port M4_TRIG_GPIO_Port
+#define R_BL_IND M5_TRIG_Pin
+#define R_BL_IND_Port M5_TRIG_GPIO_Port
+
+//BRAKE LIGHT/RUNNING LIGHTS
+#define L_BL_BRK M3_TRIG_Pin
+#define L_BL_BRK_Port M3_TRIG_GPIO_Port
+#define R_BL_BRK M4_TRIG_Pin
+#define R_BL_BRK_Port M4_TRIG_GPIO_Port
+#define BL_RUN M1_TRIG_Pin
+#define BL_RUN_Port M1_TRIG_GPIO_Port
 
 /* USER CODE END PD */
 
@@ -72,6 +113,50 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+//variables set by car over CAN
+
+//LED states are saved in the array below and the TODO: neopixel library
+int M_STATES[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+
+void CAN_upkeep() {
+
+}
+
+void clearLightStates() {
+	for (int i = 0; i < sizeof(M_STATES); i++) {
+		M_STATES[i] = 0;
+	}
+	NEO_clearLEDs();
+}
+
+void handleRunningLights() {
+
+}
+
+void handleLightCycle() {
+
+}
+
+void handleReverseLights() {
+
+}
+
+void handleTurnSignals() {
+
+}
+
+void handleHazards() {
+
+}
+
+void handleBrakeLights() {
+
+}
+
+void showLights() {
+
+}
 
 /* USER CODE END 0 */
 
@@ -117,7 +202,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   //TURN ON GREEN LED ONCE USER CODE BEGINS
-  HAL_GPIO_WritePin (GPIOC, G_LED_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin (G_LED_GPIO_Port, G_LED_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin (GPIOC, nBUZZ_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
@@ -129,18 +214,40 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_GPIO_TogglePin (GPIOC, M1_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOB, M2_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOB, M3_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOE, M4_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOE, M5_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOE, M6_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOE, M7_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOB, M8_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOD, M9_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOD, M10_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOD, M11_TRIG_Pin);
-	  HAL_GPIO_TogglePin (GPIOD, M12_TRIG_Pin);
+
+	  //checks if updated CAN data exists and issues heartbeats to CAN network for diagnostic systems
+	  CAN_upkeep();
+
+	  //clear all light states at start of loop
+	  clearLightStates();
+
+	  handleRunningLights();
+
+	  //this function implements custom light animations but will be overridden by safety-critical lighting functions later on
+	  handleLightCycle();
+
+	  handleReverseLights();
+
+	  handleTurnSignals();
+
+	  handleHazards();
+
+	  handleBrakeLights();
+
+	  showLights();
+//	  HAL_GPIO_TogglePin (GPIOC, M1_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOB, M2_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOB, M3_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOE, M4_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOE, M5_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOE, M6_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOE, M7_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOB, M8_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOD, M9_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOD, M10_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOD, M11_TRIG_Pin);
+//	  HAL_GPIO_TogglePin (GPIOD, M12_TRIG_Pin);
+	  HAL_GPIO_TogglePin (R_LED_GPIO_Port, R_LED_Pin);
 	  HAL_Delay (500);   /* Insert delay 100 ms */
   }
   /* USER CODE END 3 */
@@ -606,7 +713,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, R_LED_Pin|G_LED_Pin|M1_TRIG_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, G_LED_Pin|R_LED_Pin|M1_TRIG_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, M2_TRIG_Pin|M3_TRIG_Pin|M8_TRIG_Pin, GPIO_PIN_RESET);
@@ -621,8 +728,8 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(DIAG_ADC_nCS_GPIO_Port, DIAG_ADC_nCS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : R_LED_Pin G_LED_Pin */
-  GPIO_InitStruct.Pin = R_LED_Pin|G_LED_Pin;
+  /*Configure GPIO pins : G_LED_Pin R_LED_Pin */
+  GPIO_InitStruct.Pin = G_LED_Pin|R_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

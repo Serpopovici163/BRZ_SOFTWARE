@@ -1,0 +1,3 @@
+../Core/Src/neopixel.c:10:6:NEO_setLED	16	static
+../Core/Src/neopixel.c:14:6:NEO_showLEDs	4	static
+../Core/Src/neopixel.c:18:6:NEO_clearLEDs	4	static
