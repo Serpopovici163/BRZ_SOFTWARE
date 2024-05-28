@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "neopixel.h"
+#include "CAN_ICD.h"
+#include "CAN.h"
 
 /* USER CODE END Includes */
 
@@ -50,20 +52,20 @@
 
 //light pinouts
 //DRL
-#define R_HL_DRL M8_TRIG_Pin
-#define R_HL_DRL_Port M8_TRIG_GPIO_Port
-#define L_HL_DRL M9_TRIG_Pin
-#define L_HL_DRL_Port M9_TRIG_GPIO_Port
+#define R_HL_DRL M9_TRIG_Pin
+#define R_HL_DRL_Port M9_TRIG_GPIO_Port
+#define L_HL_DRL M10_TRIG_Pin
+#define L_HL_DRL_Port M10_TRIG_GPIO_Port
 
 //INDICATORS
-#define L_HL_IND M7_TRIG_Pin
-#define L_HL_IND_Port M7_TRIG_GPIO_Port
-#define R_HL_IND M6_TRIG_Pin
-#define R_HL_IND_Port M6_TRIG_GPIO_Port
-#define L_BL_IND M4_TRIG_Pin
-#define L_BL_IND_Port M4_TRIG_GPIO_Port
-#define R_BL_IND M5_TRIG_Pin
-#define R_BL_IND_Port M5_TRIG_GPIO_Port
+#define L_HL_IND M8_TRIG_Pin
+#define L_HL_IND_Port M8_TRIG_GPIO_Port
+#define R_HL_IND M7_TRIG_Pin
+#define R_HL_IND_Port M7_TRIG_GPIO_Port
+#define L_BL_IND M5_TRIG_Pin
+#define L_BL_IND_Port M5_TRIG_GPIO_Port
+#define R_BL_IND M6_TRIG_Pin
+#define R_BL_IND_Port M6_TRIG_GPIO_Port
 
 //BRAKE LIGHT/RUNNING LIGHTS
 #define L_BL_BRK M3_TRIG_Pin
@@ -72,6 +74,17 @@
 #define R_BL_BRK_Port M4_TRIG_GPIO_Port
 #define BL_RUN M1_TRIG_Pin
 #define BL_RUN_Port M1_TRIG_GPIO_Port
+
+//M_STATES indexes
+#define M_STATES_INDEX_BL_RUN 0
+#define M_STATES_INDEX_L_BL_BRK 2
+#define M_STATES_INDEX_R_BL_BRK 3
+#define M_STATES_INDEX_L_BL_IND 4
+#define M_STATES_INDEX_R_BL_IND 5
+#define M_STATES_INDEX_R_HL_IND 6
+#define M_STATES_INDEX_L_HL_IND 7
+#define M_STATES_INDEX_R_HL_DRL 8
+#define M_STATES_INDEX_L_HL_DRL 9
 
 /* USER CODE END PD */
 
@@ -114,13 +127,30 @@ static void MX_TIM3_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-//variables set by car over CAN
+//STATE VARIABLES
+//Variables describing current light state
+uint8_t STATE_running_light = 0;
 
+//TIMER VARIABLES
+uint32_t TIMER_turn_signal = 0; //used for turn signals
+uint32_t TIMER_light_cycle = 0; //used for light animations
+uint32_t TIMER_brake_flash = 0; //used for brake light animations (can be superimposed on top of light animations)
+uint32_t TIMER_CAN_timeout = 0; //used to detect CAN bus timeout
+
+//LIGHT STATE VARIABLES
 //LED states are saved in the array below and the TODO: neopixel library
 int M_STATES[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
-void CAN_upkeep() {
-
+void CAN_heartbeat() {
+	//check if CAN has timed out
+	if (HAL_GetTick() - TIMER_CAN_timeout > CANBUS_TIMEOUT) {
+		//alarm, we should not be able to attain this state
+		CAN_setHeartbeat(1); //broadcast fault code TODO
+		CAN_sendUnique(); //maybe send unique message to alert diag computer of failure, even if it fixes itself
+		HAL_GPIO_WritePin (BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);
+	} else {
+		CAN_setHeartbeat(0); //TODO make ICD of fault codes common to all HW (communication fault, power fault, temp fault, etc)
+	}
 }
 
 void clearLightStates() {
@@ -131,7 +161,9 @@ void clearLightStates() {
 }
 
 void handleRunningLights() {
-
+	if (STATE_running_lights) {
+		M_STATES[M_STATES_INDEX_BL_RUN] = 1;
+	}
 }
 
 void handleLightCycle() {
@@ -157,6 +189,13 @@ void handleBrakeLights() {
 void showLights() {
 
 }
+
+//initialize timers to prevent erroneous behaviour
+turn_signal_timer = HAL_GetTick();
+light_cycle_timer = HAL_GetTick();
+brake_flash_timer = HAL_GetTick();
+can_bus_timout_timer = HAL_GetTick();
+
 
 /* USER CODE END 0 */
 
@@ -216,7 +255,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  //checks if updated CAN data exists and issues heartbeats to CAN network for diagnostic systems
-	  CAN_upkeep();
+	  CAN_heartbeat();
 
 	  //clear all light states at start of loop
 	  clearLightStates();
