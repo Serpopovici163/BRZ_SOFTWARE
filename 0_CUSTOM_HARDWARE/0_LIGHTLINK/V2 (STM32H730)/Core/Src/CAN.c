@@ -5,6 +5,8 @@
  *      Author: sdfuh
  */
 
+#include <stdint.h>
+
 void CAN_setHeartbeat(uint8_t state) {
 
 }

@@ -129,7 +129,7 @@ static void MX_TIM3_Init(void);
 
 //STATE VARIABLES
 //Variables describing current light state
-uint8_t STATE_running_light = 0;
+uint8_t STATE_running_lights = 0;
 
 //TIMER VARIABLES
 uint32_t TIMER_turn_signal = 0; //used for turn signals
@@ -139,15 +139,15 @@ uint32_t TIMER_CAN_timeout = 0; //used to detect CAN bus timeout
 
 //LIGHT STATE VARIABLES
 //LED states are saved in the array below and the TODO: neopixel library
-int M_STATES[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+uint8_t M_STATES[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 void CAN_heartbeat() {
 	//check if CAN has timed out
 	if (HAL_GetTick() - TIMER_CAN_timeout > CANBUS_TIMEOUT) {
 		//alarm, we should not be able to attain this state
 		CAN_setHeartbeat(1); //broadcast fault code TODO
-		CAN_sendUnique(); //maybe send unique message to alert diag computer of failure, even if it fixes itself
-		HAL_GPIO_WritePin (BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);
+		//CAN_sendUnique(); //maybe send unique message to alert diag computer of failure, even if it fixes itself
+		HAL_GPIO_WritePin (nBUZZ_GPIO_Port, nBUZZ_Pin, GPIO_PIN_SET);
 	} else {
 		CAN_setHeartbeat(0); //TODO make ICD of fault codes common to all HW (communication fault, power fault, temp fault, etc)
 	}
@@ -189,13 +189,6 @@ void handleBrakeLights() {
 void showLights() {
 
 }
-
-//initialize timers to prevent erroneous behaviour
-turn_signal_timer = HAL_GetTick();
-light_cycle_timer = HAL_GetTick();
-brake_flash_timer = HAL_GetTick();
-can_bus_timout_timer = HAL_GetTick();
-
 
 /* USER CODE END 0 */
 
@@ -239,6 +232,12 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+
+  //initialize timers to prevent erroneous behaviour
+  TIMER_turn_signal = HAL_GetTick();
+  TIMER_light_cycle = HAL_GetTick();
+  TIMER_brake_flash = HAL_GetTick();
+  TIMER_CAN_timeout = HAL_GetTick();
 
   //TURN ON GREEN LED ONCE USER CODE BEGINS
   HAL_GPIO_WritePin (G_LED_GPIO_Port, G_LED_Pin, GPIO_PIN_RESET);

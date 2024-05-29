@@ -32,7 +32,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_spi_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
- ../Core/Inc/neopixel.h
+ ../Core/Inc/neopixel.h \
+ C:/Users/Trololololol/Documents/Projects/BRZ_SOFTWARE/00_CAN_ICD/CAN_ICD.h \
+ ../Core/Inc/CAN.h
 ../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
@@ -68,3 +70,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h:
 ../Core/Inc/neopixel.h:
+C:/Users/Trololololol/Documents/Projects/BRZ_SOFTWARE/00_CAN_ICD/CAN_ICD.h:
+../Core/Inc/CAN.h:

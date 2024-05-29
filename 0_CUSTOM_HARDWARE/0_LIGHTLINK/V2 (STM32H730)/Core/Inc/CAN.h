@@ -8,6 +8,8 @@
 #ifndef INC_CAN_H_
 #define INC_CAN_H_
 
+#include <stdint.h>
+
 void CAN_setHeartbeat(uint8_t state);
 
 #endif /* INC_CAN_H_ */
