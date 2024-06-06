@@ -60,8 +60,8 @@ all: main-build
 main-build: LIGHTLINK.elf secondary-outputs
 
 # Tool invocations
-LIGHTLINK.elf LIGHTLINK.map: $(OBJS) $(USER_OBJS) C:\Users\Trololololol\Documents\Projects\BRZ_SOFTWARE\0_CUSTOM_HARDWARE\0_LIGHTLINK\V2\ (STM32H730)\STM32H730VBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "LIGHTLINK.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\Trololololol\Documents\Projects\BRZ_SOFTWARE\0_CUSTOM_HARDWARE\0_LIGHTLINK\V2 (STM32H730)\STM32H730VBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LIGHTLINK.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+LIGHTLINK.elf LIGHTLINK.map: $(OBJS) $(USER_OBJS) C:\Users\sdfuh\Documents\0_PROJECTS\BRZ_SOFTWARE\0_CUSTOM_HARDWARE\0_LIGHTLINK\V2\ (STM32H730)\STM32H730VBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "LIGHTLINK.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\sdfuh\Documents\0_PROJECTS\BRZ_SOFTWARE\0_CUSTOM_HARDWARE\0_LIGHTLINK\V2 (STM32H730)\STM32H730VBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LIGHTLINK.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
