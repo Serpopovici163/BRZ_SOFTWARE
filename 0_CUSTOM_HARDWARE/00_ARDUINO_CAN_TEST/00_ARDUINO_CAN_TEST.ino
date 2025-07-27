@@ -10,14 +10,14 @@ MCP2515 mcp2515(53);
 void setup() {
   canMsg1.can_id  = 0x0F6;
   canMsg1.can_dlc = 8;
-  canMsg1.data[0] = 0x8E;
-  canMsg1.data[1] = 0x87;
-  canMsg1.data[2] = 0x32;
-  canMsg1.data[3] = 0xFA;
-  canMsg1.data[4] = 0x26;
-  canMsg1.data[5] = 0x8E;
-  canMsg1.data[6] = 0xBE;
-  canMsg1.data[7] = 0x86;
+  canMsg1.data[0] = 0x01;
+  canMsg1.data[1] = 0x02;
+  canMsg1.data[2] = 0x03;
+  canMsg1.data[3] = 0x04;
+  canMsg1.data[4] = 0x05;
+  canMsg1.data[5] = 0x06;
+  canMsg1.data[6] = 0x07;
+  canMsg1.data[7] = 0x08;
 
   canMsg2.can_id  = 0x036;
   canMsg2.can_dlc = 8;
@@ -44,7 +44,7 @@ void setup() {
 
 void loop() {
   mcp2515.sendMessage(&canMsg1);
-  mcp2515.sendMessage(&canMsg2);
+  //mcp2515.sendMessage(&canMsg2);
 
   Serial.println("Messages sent");
   digitalWrite(LED_BUILTIN, HIGH);
