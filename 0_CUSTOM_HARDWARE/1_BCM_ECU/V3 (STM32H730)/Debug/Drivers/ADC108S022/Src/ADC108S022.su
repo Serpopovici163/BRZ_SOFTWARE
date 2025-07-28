@@ -1,0 +1,5 @@
+../Drivers/ADC108S022/Src/ADC108S022.c:5:13:_cs_assert	16	static
+../Drivers/ADC108S022/Src/ADC108S022.c:9:13:_cs_deassert	16	static
+../Drivers/ADC108S022/Src/ADC108S022.c:13:16:_build_control_byte	16	static
+../Drivers/ADC108S022/Src/ADC108S022.c:17:6:ADC108S022_Init	16	static
+../Drivers/ADC108S022/Src/ADC108S022.c:22:10:ADC108S022_ReadChannel	32	static

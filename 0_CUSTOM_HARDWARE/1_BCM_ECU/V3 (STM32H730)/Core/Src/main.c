@@ -22,6 +22,14 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "ADC108S022.h"
+#include "MCP23017.h"
+#include "tcan1146.h"
+#include "ws2812b.h"
+
+#include "state_manager.h"
+#include "light_manager.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,14 +62,106 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim12;
 
 /* USER CODE BEGIN PV */
+
+ADC108S022 ADC_MOS_0 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOA,        // CS on PA4
+    .cs_pin = GPIO_PIN_4
+};
+
+ADC108S022 ADC_MOS_1 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOC,        // CS on PC7
+    .cs_pin = GPIO_PIN_7
+};
+
+ADC108S022 ADC_MOS_2 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOC,        // CS on PC8
+    .cs_pin = GPIO_PIN_8
+};
+
+ADC108S022 ADC_MOS_3 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOD,        // CS on PD9
+    .cs_pin = GPIO_PIN_9
+};
+
+ADC108S022 ADC_GEN_0 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOD,        // CS on PD8
+    .cs_pin = GPIO_PIN_8
+};
+
+ADC108S022 ADC_GEN_1 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOD,        // CS on PD11
+    .cs_pin = GPIO_PIN_11
+};
+
+ADC108S022 ADC_GEN_2 = {
+    .hspi = &hspi6,
+    .cs_port = GPIOD,        // CS on PD10
+    .cs_pin = GPIO_PIN_10
+};
+
+MCP23017 MCP23017_0 = {			//TODO: update and make interrupt code
+    .i2c = &hi2c4,             // I2C1 peripheral
+    .i2c_addr = 0x20,          // A2/A1/A0 = GND
+    .rst_port = GPIOD,         // RST on PD15
+    .rst_pin = GPIO_PIN_15,
+    .inta_port = GPIOD,        // INTA on PD14
+    .inta_pin = GPIO_PIN_14,
+    .intb_port = GPIOD,        // INTB on PD13
+    .intb_pin = GPIO_PIN_13
+};
+
+MCP23017 MCP23017_1 = { 		//TODO: update
+    .i2c = &hi2c4,             // I2C1 peripheral
+    .i2c_addr = 0x20,          // A2/A1/A0 = GND
+    .rst_port = GPIOD,         // RST on PD7
+    .rst_pin = GPIO_PIN_7,
+    .inta_port = GPIOB,        // INTA on PB5
+    .inta_pin = GPIO_PIN_5,
+    .intb_port = GPIOB,        // INTB on PB4
+    .intb_pin = GPIO_PIN_4
+};
+
+TCAN1146 tcan = {
+    .hspi = &hspi4,          // SPI1
+    .cs_port = GPIOE,        // CS on PE3
+    .cs_pin = GPIO_PIN_3
+};
+
+WS2812B_Strip strip1 = {
+    .htim = &htim1,               // TIM1
+    .channel = TIM_CHANNEL_1,     // PWM Channel 1
+    .hdma = &hdma_tim1_ch1,       // DMA for TIM1_CH1
+    .num_leds = 30,               // 30 LEDs in this strip
+    .pwm_buffer = {0}             // Zero-init buffer
+};
+
+WS2812B_Strip strip2 = {
+    .htim = &htim2,               // TIM2
+    .channel = TIM_CHANNEL_2,     // PWM Channel 2
+    .hdma = &hdma_tim2_ch2,       // DMA for TIM2_CH2
+    .num_leds = 60,               // 60 LEDs in this strip
+    .pwm_buffer = {0}             // Zero-init buffer
+};
+
+uint32_t wake_id = 0x12345678;	//TODO: UPDATE THESE VARS
+uint8_t wake_payload[] = {0xAA, 0xBB};
+uint8_t wake_payload_length = 2;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
@@ -74,6 +174,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM12_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -109,6 +210,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -125,7 +229,28 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM12_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+
+  ADC108S022_Init(&ADC_MOS_0);
+  ADC108S022_Init(&ADC_MOS_1);
+  ADC108S022_Init(&ADC_MOS_2);
+  ADC108S022_Init(&ADC_MOS_3);
+  ADC108S022_Init(&ADC_GEN_0);
+  ADC108S022_Init(&ADC_GEN_1);
+  ADC108S022_Init(&ADC_GEN_2);
+
+  MCP23017_Init(&MCP23017_0);
+  MCP23017_Init(&MCP23017_1);
+
+  TCAN1146_Init(&tcan, wake_id, wake_payload, wake_payload_length);
+
+  // Initialize strips (assigns hardware, uses num_leds)
+  WS2812B_Init(&strip1);
+  WS2812B_Init(&strip2);
+
+  //TIM6 is used for regular lighting update interrupts
+  HAL_TIM_Base_Start_IT(&htim6);  // Start TIM6 interrupts
 
   /* USER CODE END 2 */
 
@@ -138,6 +263,13 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+// Callback for interrupts caused by timers
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim == &htim6) {
+        //update lights
+    }
 }
 
 /**
@@ -162,21 +294,18 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_CSI|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_CSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
-  RCC_OscInitStruct.HSICalibrationValue = 64;
   RCC_OscInitStruct.CSIState = RCC_CSI_ON;
   RCC_OscInitStruct.CSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 25;
-  RCC_OscInitStruct.PLL.PLLN = 75;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 5;
+  RCC_OscInitStruct.PLL.PLLN = 48;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 3;
   RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_1;
+  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -189,15 +318,44 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
                               |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV8;
   RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI6|RCC_PERIPHCLK_SPI4
+                              |RCC_PERIPHCLK_FDCAN;
+  PeriphClkInitStruct.PLL2.PLL2M = 5;
+  PeriphClkInitStruct.PLL2.PLL2N = 48;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 96;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_PLL2;
+  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
+  PeriphClkInitStruct.Spi6ClockSelection = RCC_SPI6CLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
@@ -645,6 +803,44 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 2 */
   HAL_TIM_MspPostInit(&htim4);
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 1499;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 99;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 

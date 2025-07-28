@@ -1,0 +1,2 @@
+../Drivers/Light_Manager/Src/light_manager.c:7:6:LIGHT_UpdateAll	2
+../Drivers/Light_Manager/Src/light_manager.c:18:6:_HandleAnimationStep	2
